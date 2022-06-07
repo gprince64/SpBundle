@@ -13,12 +13,13 @@ namespace LightSaml\SpBundle\Controller;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Psr\Container\ContainerInterface;
 
 class DefaultController extends AbstractController
 {
-    public function metadataAction()
+    public function metadataAction(ContainerInterface $container)
     {
-        $profile = $this->get('ligthsaml.profile.metadata');
+        $profile = $container->get('ligthsaml.profile.metadata');
         $context = $profile->buildContext();
         $action = $profile->buildAction();
 
@@ -27,9 +28,9 @@ class DefaultController extends AbstractController
         return $context->getHttpResponseContext()->getResponse();
     }
 
-    public function discoveryAction()
+    public function discoveryAction(ContainerInterface $container)
     {
-        $parties = $this->get('lightsaml.container.build')->getPartyContainer()->getIdpEntityDescriptorStore()->all();
+        $parties = $container->get('lightsaml.container.build')->getPartyContainer()->getIdpEntityDescriptorStore()->all();
 
         if (1 == count($parties)) {
             return $this->redirect($this->generateUrl('lightsaml_sp.login', ['idp' => $parties[0]->getEntityID()]));
@@ -40,14 +41,14 @@ class DefaultController extends AbstractController
         ]);
     }
 
-    public function loginAction(Request $request)
+    public function loginAction(Request $request, ContainerInterface $container)
     {
         $idpEntityId = $request->get('idp');
         if (null === $idpEntityId) {
-            return $this->redirect($this->generateUrl($this->container->getParameter('lightsaml_sp.route.discovery')));
+            return $this->redirect($this->generateUrl($container->getParameter('lightsaml_sp.route.discovery')));
         }
 
-        $profile = $this->get('ligthsaml.profile.login_factory')->get($idpEntityId);
+        $profile = $container->get('ligthsaml.profile.login_factory')->get($idpEntityId);
         $context = $profile->buildContext();
         $action = $profile->buildAction();
 
@@ -56,9 +57,9 @@ class DefaultController extends AbstractController
         return $context->getHttpResponseContext()->getResponse();
     }
 
-    public function sessionsAction()
+    public function sessionsAction(ContainerInterface $container)
     {
-        $ssoState = $this->get('lightsaml.container.build')->getStoreContainer()->getSsoStateStore()->get();
+        $ssoState = $container->get('lightsaml.container.build')->getStoreContainer()->getSsoStateStore()->get();
 
         return $this->render('@LightSamlSp/sessions.html.twig', [
             'sessions' => $ssoState->getSsoSessions(),
